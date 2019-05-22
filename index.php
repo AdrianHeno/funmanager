@@ -2,11 +2,6 @@
 $config['displayErrorDetails'] = true;
 $config['addContentLengthHeader'] = false;
 
-$config['db']['host']   = 'localhost';
-$config['db']['user']   = 'root';
-$config['db']['pass']   = 'root';
-$config['db']['dbname'] = 'funmanager';
-
 
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
@@ -14,7 +9,7 @@ use \Psr\Http\Message\ResponseInterface as Response;
 require 'vendor/autoload.php';
 
 $app = new \Slim\App(['settings' => $config]);
-
+$c = new \Slim\Container($config);
 $container = $app->getContainer();
 
 $container['logger'] = function($c) {
@@ -24,23 +19,21 @@ $container['logger'] = function($c) {
     return $logger;
 };
 
-// PDO database library 
+// PDO database library
+//Set up a database connection
 $container['db'] = function ($c) {
-    $settings = $c->get('settings')['db'];
-    $pdo = new PDO("mysql:host=" . $settings['host'] . ";dbname=" . $settings['dbname'],
-        $settings['user'], $settings['pass']);
+    $pdo = new PDO('mysql:host=' . getenv("MYSQL_HOST") . ';dbname=' . getenv("MYSQL_DATABASE"), getenv("MYSQL_USER"), getenv("MYSQL_PASSWORD"));
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
     return $pdo;
 };
 
-/*$app->get('/funds', function ($request, $response, $args) {//Get a budget row
-    echo 'pants';
+$app->get('/funds', function ($request, $response, $args) {//Get all budget rows
     $sth = $this->db->prepare("SELECT * FROM funds");
     $sth->execute();
     $funds = $sth->fetchAll();
     return $this->response->withJson($funds);
- });*/
+ });
 
 
  $app->get('/funds/{id}', function ($request, $response, $args) {//Get a budget row
@@ -64,7 +57,7 @@ $container['db'] = function ($c) {
     $sth->execute();
  });
  
- $app->get('/inflow/{id}/{amount}', function ($request, $response, $args) {//subtract funds from a budget row
+ $app->get('/inflow/{id}/{amount}', function ($request, $response, $args) {//Add funds to a budget row
     $fund_id = (int)$args['id'];
     $purchase_amount = (int)$args['amount'];
     $sth = $this->db->prepare("SELECT * FROM funds WHERE funds.id =" . $fund_id);

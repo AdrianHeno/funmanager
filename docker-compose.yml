@@ -1,0 +1,29 @@
+version: '3.2'
+
+services:
+  db:
+    image: mysql:5.6.23
+    container_name: funmanager_mysql
+    volumes:
+      - ./db-data:/docker-entrypoint-initdb.d
+    env_file:
+      - env-local.env
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - type: bind
+        source: ./
+        target: /data/www
+    ports:
+      - "8670:80"
+    container_name: funmanager_web
+    links:
+      - db
+    depends_on:
+      - db
+    env_file:
+      - env-local.env
+volumes:
+  db-data:
